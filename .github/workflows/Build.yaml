@@ -17,10 +17,10 @@ jobs:
             - device: "pixel"
               api: 30
               profile: "pixel"
-            - device: "Nexus 6"
+            - device: "Nexus_6"
               api: 29
               profile: "Nexus 6"
-            - device: "Nexus 4"
+            - device: "Nexus_4"
               api: 28
               profile: "Nexus 4"
     timeout-minutes: 45

@@ -8,7 +8,10 @@ NUMBER_OF_RUNS=2
 APP_PKG="com.google.samples.apps.nowinandroid.demo"
 BENCHMARK_PKG="com.google.samples.apps.nowinandroid.benchmarks"
 TEST_RUNNER="androidx.test.runner.AndroidJUnitRunner"
-EMULATOR_BENCHMARK_RESULT_DIR="/sdcard/Download"
+
+# to fix the permission issue I write in the internal data folder instead
+RESULT_SUBDIR="test_results"
+EMULATOR_BENCHMARK_RESULT_DIR="/data/data/${BENCHMARK_PKG}/files/${RESULT_SUBDIR}"
 
 PATH_APK_BASELINE="${1:-}"
 PATH_APK_CANDIDATE="${2:-}"
@@ -25,37 +28,35 @@ install_apk() {
 
   sleep 2
 
-  # Force-grant storage permissions to the benchmark app so it can save the JSON file
-  adb shell pm grant "$BENCHMARK_PKG" android.permission.READ_EXTERNAL_STORAGE || true
-  adb shell pm grant "$BENCHMARK_PKG" android.permission.WRITE_EXTERNAL_STORAGE || true
-  adb shell pm grant "$APP_PKG" android.permission.READ_EXTERNAL_STORAGE || true
-  adb shell pm grant "$APP_PKG" android.permission.WRITE_EXTERNAL_STORAGE || true
-
   adb shell pm clear "$APP_PKG" || true
   adb shell pm clear "${BENCHMARK_PKG}" || true
-  adb shell rm -rf "${EMULATOR_BENCHMARK_RESULT_DIR}" || true
-  adb shell mkdir -p "${EMULATOR_BENCHMARK_RESULT_DIR}"
+  # using run-as to fix the permission issues
+  adb shell "run-as ${BENCHMARK_PKG} rm -rf files/${RESULT_SUBDIR}" || true
+  adb shell "run-as ${BENCHMARK_PKG} mkdir -p files/${RESULT_SUBDIR}"
 }
 
 run_benchmark() {
+  echo "Running benchmark..."
   adb shell am instrument -w \
     -e class com.google.samples.apps.nowinandroid.startup.StartupBenchmark#startupPrecompiledWithBaselineProfile \
     -e androidx.benchmark.suppressErrors EMULATOR \
     -e androidx.benchmark.profiling.mode none \
     -e no-isolated-storage true \
-    -e androidx.benchmark.force_legacy_storage true \
-    -e additionalTestOutputDir "${EMULATOR_BENCHMARK_RESULT_DIR}" \
+    -e additionalTestOutputDir "${RESULT_SUBDIR}" \
+    -e androidx.benchmark.output.relative true \
     "$BENCHMARK_PKG/$TEST_RUNNER"
-    # added force_legacy_storage to prevent 'Permission Denied' on file save (Required for Nexus 4/API 28 to stop the "File Not Found" error)
 }
 
 write_benchmark_result() {
   local output_path="${1}"
+  mkdir -p "$(dirname "${output_path}")"
 
-  adb pull "${EMULATOR_BENCHMARK_RESULT_DIR}/." "${TEMP_DIR}/pull_out/"
+  # adb pull "${EMULATOR_BENCHMARK_RESULT_DIR}/." "${TEMP_DIR}/pull_out/"
+  echo "Pulling results from internal storage..."
+  adb shell "run-as ${BENCHMARK_PKG} tar c -C files/${RESULT_SUBDIR} ." | tar x -C "${TEMP_DIR}"
 
-  mv "${TEMP_DIR}/pull_out/"*.json "${output_path}"
-  rm -rf "${TEMP_DIR}/pull_out/"
+  mv "${TEMP_DIR}"/*.json "${output_path}" || echo "No results found for this run"
+  rm -f "${TEMP_DIR}/"* || true
 }
 
 if [[ -z "${PATH_APK_BASELINE}" || -z "${PATH_APK_CANDIDATE}" ]]; then
