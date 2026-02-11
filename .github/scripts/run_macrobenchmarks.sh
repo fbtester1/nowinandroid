@@ -12,6 +12,7 @@ TEST_RUNNER="androidx.test.runner.AndroidJUnitRunner"
 # to fix the permission issue I write in the internal data folder instead
 RESULT_SUBDIR="test_results"
 EMULATOR_BENCHMARK_RESULT_DIR="/data/data/${BENCHMARK_PKG}/files/${RESULT_SUBDIR}"
+TRANSFER_PATH="/data/local/tmp/benchmark_bridge"
 
 PATH_APK_BASELINE="${1:-}"
 PATH_APK_CANDIDATE="${2:-}"
@@ -30,9 +31,9 @@ install_apk() {
 
   adb shell pm clear "$APP_PKG" || true
   adb shell pm clear "${BENCHMARK_PKG}" || true
-  # using run-as to fix the permission issues
-  adb shell "run-as ${BENCHMARK_PKG} rm -rf files/${RESULT_SUBDIR}" || true
-  adb shell "run-as ${BENCHMARK_PKG} mkdir -p files/${RESULT_SUBDIR}"
+
+  # trying making a transfer folder instead
+  adb shell "rm -rf ${TRANSFER_PATH} && mkdir -p ${TRANSFER_PATH} && chmod 777 ${TRANSFER_PATH}"
 }
 
 run_benchmark() {
@@ -53,9 +54,12 @@ write_benchmark_result() {
 
   # adb pull "${EMULATOR_BENCHMARK_RESULT_DIR}/." "${TEMP_DIR}/pull_out/"
   echo "Pulling results from internal storage..."
-  adb shell "run-as ${BENCHMARK_PKG} tar c -C files/${RESULT_SUBDIR} ." | tar x -C "${TEMP_DIR}"
+  adb shell "cp ${EMULATOR_BENCHMARK_RESULT_DIR}/*.json ${TRANSFER_PATH}/" || echo "No JSON files found to bridge."
 
+  adb pull "${TRANSFER_PATH}/." "${TEMP_DIR}/"
   mv "${TEMP_DIR}"/*.json "${output_path}" || echo "No results found for this run"
+  
+  adb shell "rm -f ${TRANSFER_PATH}/*.json"
   rm -f "${TEMP_DIR}/"* || true
 }
 
