@@ -9,8 +9,8 @@ APP_PKG="com.google.samples.apps.nowinandroid.demo"
 BENCHMARK_PKG="com.google.samples.apps.nowinandroid.benchmarks"
 TEST_RUNNER="androidx.test.runner.AndroidJUnitRunner"
 
-# trying external storage instead
-EXTERNAL_STORAGE_DIR="/data/local/tmp/benchmark_results"
+# trying the pkg internal storage instead
+INTERNAL_DIR="/data/data/${BENCHMARK_PKG}/files/test_results"
 
 PATH_APK_BASELINE="${1:-}"
 PATH_APK_CANDIDATE="${2:-}"
@@ -21,7 +21,6 @@ trap 'rm -rf "${TEMP_DIR}"' EXIT
 
 install_apk() {
   local apk_path="${1}"
-
   echo "Installing: ${apk_path}"
   adb install -r "${apk_path}"
 
@@ -31,7 +30,7 @@ install_apk() {
   adb shell pm clear "${BENCHMARK_PKG}" || true
 
   # trying making a transfer folder instead
-  adb shell "rm -rf ${EXTERNAL_STORAGE_DIR} && mkdir -p ${EXTERNAL_STORAGE_DIR} && chmod 777 ${EXTERNAL_STORAGE_DIR}"
+  adb shell "run-as ${BENCHMARK_PKG} rm -rf ./files/test_results && run-as ${BENCHMARK_PKG} mkdir -p ./files/test_results"
 }
 
 run_benchmark() {
@@ -40,8 +39,9 @@ run_benchmark() {
     -e class com.google.samples.apps.nowinandroid.startup.StartupBenchmark#startupPrecompiledWithBaselineProfile \
     -e androidx.benchmark.suppressErrors EMULATOR \
     -e androidx.benchmark.profiling.mode none \
+    -e additionalTestOutputDir "test_results" \
     -e no-isolated-storage true \
-    -e additionalTestOutputDir "${EXTERNAL_STORAGE_DIR}" \
+    -e androidx.benchmark.output.relative true \
     "$BENCHMARK_PKG/$TEST_RUNNER"
 }
 
@@ -49,12 +49,17 @@ write_benchmark_result() {
   local output_path="${1}"
   mkdir -p "$(dirname "${output_path}")"
 
-  echo "Pulling results from external storage..."
+  echo "Extracting results from app folder..."
 
-  adb pull "${EXTERNAL_STORAGE_DIR}/." "${TEMP_DIR}/"
+  BRIDGE="/data/local/tmp/bridge"
+  adb shell "rm -rf ${BRIDGE} && mkdir -p ${BRIDGE} && chmod 777 ${BRIDGE}"
+
+  adb shell "run-as ${BENCHMARK_PKG} cp -R ./files/test_results/. ${BRIDGE}/" || echo "Copy failed"
+  
+  adb pull "${BRIDGE}/." "${TEMP_DIR}/"
   mv "${TEMP_DIR}"/*.json "${output_path}" || echo "No results found for this run"
   
-  adb shell "rm -f ${EXTERNAL_STORAGE_DIR}/*"
+  adb shell "rm -rf ${BRIDGE}"
   rm -f "${TEMP_DIR}/"* || true
 }
 
