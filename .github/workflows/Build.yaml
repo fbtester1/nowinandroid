@@ -10,6 +10,10 @@ env:
 jobs:
   benchmark-android:
     runs-on: ubuntu-latest
+    strategy:
+        matrix:
+          runner_index: [1, 2, 3]
+        fail-fast: false # if a runner fails the other can still go on
     timeout-minutes: 45
 
     steps:
@@ -73,17 +77,17 @@ jobs:
           script: |
             adb install ./candidate/benchmarks/build/outputs/apk/demo/benchmarkRelease/benchmarks-demo-benchmarkRelease.apk
             chmod +x ./candidate/.github/scripts/run_macrobenchmarks.sh
-            ./candidate/.github/scripts/run_macrobenchmarks.sh "./baseline/app/build/outputs/apk/demo/benchmarkRelease/app-demo-benchmarkRelease.apk" "./candidate/app/build/outputs/apk/demo/benchmarkRelease/app-demo-benchmarkRelease.apk"
+            ./candidate/.github/scripts/run_macrobenchmarks.sh "./baseline/app/build/outputs/apk/demo/benchmarkRelease/app-demo-benchmarkRelease.apk" "./candidate/app/build/outputs/apk/demo/benchmarkRelease/app-demo-benchmarkRelease.apk" "./results_runner_${{ matrix.runner_index }}"
 
       - name: Compare macrobenchmark results
         run: |
             python3 ./candidate/.github/scripts/step_fit.py \
-              "./macrobenchmark_results/baseline" \
-              "./macrobenchmark_results/candidate"
+              "./results_runner_${{ matrix.runner_index }}/baseline" \
+              "./results_runner_${{ matrix.runner_index }}/candidate"
 
       - name: Upload Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: benchmark-results
-          path: ./macrobenchmark_results/
+          name: benchmark-results-runner-${{ matrix.runner_index }}
+          path: ./results_runner_${{ matrix.runner_index }}/
