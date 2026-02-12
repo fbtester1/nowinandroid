@@ -13,6 +13,8 @@ PATH_APK_BASELINE="${1:-}"
 PATH_APK_CANDIDATE="${2:-}"
 OUTPUT_DIR="${3:-./macrobenchmark_results}"
 
+echo "Debug: Saving results to: ${OUTPUT_DIR}"
+
 TEMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TEMP_DIR}"' EXIT
 
@@ -23,7 +25,10 @@ install_apk() {
 
   sleep 2
 
+  # 'pm clear' alone sometimes leaves a 'ghost' process. 'force-stop' ensures a true Cold Start
+  adb shell am force-stop "$APP_PKG" || true
   adb shell pm clear "$APP_PKG" || true
+  adb shell am force-stop "${BENCHMARK_PKG}" || true
   adb shell pm clear "${BENCHMARK_PKG}" || true
 }
 
@@ -47,20 +52,14 @@ write_benchmark_result() {
   adb shell "rm -rf ${BRIDGE} && mkdir -p ${BRIDGE} && chmod 777 ${BRIDGE}"
 
   echo "Looking in default storage locations..."
-  adb shell "su 0 cp -R /storage/emulated/0/Android/media/${BENCHMARK_PKG}/. ${BRIDGE}/ 2>/dev/null || true"
-  adb shell "su 0 cp -R /storage/emulated/0/Android/data/${BENCHMARK_PKG}/files/. ${BRIDGE}/ 2>/dev/null || true"
-  adb shell "su 0 cp -R /data/data/${BENCHMARK_PKG}/files/. ${BRIDGE}/ 2>/dev/null || true"
+  # Macrobenchmark libraries change their output directory depending on the version and API level.
+  adb shell "su 0 find /storage/emulated/0/Android/data/${BENCHMARK_PKG}/ /storage/emulated/0/Android/media/${BENCHMARK_PKG}/ /data/data/${BENCHMARK_PKG}/ -name '*benchmarkData.json' -exec cp {} ${BRIDGE}/data.json \;" 2>/dev/null || true
   adb shell "su 0 chmod -R 777 ${BRIDGE}"
 
-  # List what we found
-  echo "Debug: Contents of bridge folder on device:"
-  adb shell "ls -R -l ${BRIDGE}"
+  adb pull "${BRIDGE}/data.json" "${TEMP_DIR}/data.json" || echo "Warning: JSON pull failed"
 
-  adb pull "${BRIDGE}/." "${TEMP_DIR}/"
-
-  JSON_FILE=$(find "${TEMP_DIR}" -name "*.json" | head -n 1)
-  if [[ -n "$JSON_FILE" ]]; then
-    mv "$JSON_FILE" "${output_path}"
+  if [[ -f "${TEMP_DIR}/data.json" ]]; then
+    mv "${TEMP_DIR}/data.json" "${output_path}"
     echo "Success: Saved to ${output_path}"
   else
     echo "ERROR: No results found. The benchmark likely crashed or wrote somewhere unexpected."
