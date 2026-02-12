@@ -49,7 +49,13 @@ write_benchmark_result() {
   echo "Looking in default storage locations..."
   adb shell "su 0 cp -R /storage/emulated/0/Android/media/${BENCHMARK_PKG}/. ${BRIDGE}/ 2>/dev/null || true"
   adb shell "su 0 cp -R /storage/emulated/0/Android/data/${BENCHMARK_PKG}/files/. ${BRIDGE}/ 2>/dev/null || true"
-  
+  adb shell "su 0 cp -R /data/data/${BENCHMARK_PKG}/files/. ${BRIDGE}/ 2>/dev/null || true"
+  adb shell "su 0 chmod -R 777 ${BRIDGE}"
+
+  # List what we found
+  echo "Debug: Contents of bridge folder on device:"
+  adb shell "ls -R -l ${BRIDGE}"
+
   adb pull "${BRIDGE}/." "${TEMP_DIR}/"
 
   JSON_FILE=$(find "${TEMP_DIR}" -name "*.json" | head -n 1)
@@ -58,8 +64,6 @@ write_benchmark_result() {
     echo "Success: Saved to ${output_path}"
   else
     echo "ERROR: No results found. The benchmark likely crashed or wrote somewhere unexpected."
-    echo "Debug: Listing /sdcard/Android/media/..."
-    adb shell "su 0 ls -R /storage/emulated/0/Android/media/${BENCHMARK_PKG} 2>/dev/null"
     exit 1
   fi
     
