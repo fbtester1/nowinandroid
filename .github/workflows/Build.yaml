@@ -85,10 +85,9 @@ jobs:
           emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 4096
           disable-animations: true
           script: |
-            OUTPUT_FOLDER="./results_${{ matrix.device }}"
             adb install ./candidate/benchmarks/build/outputs/apk/demo/benchmarkRelease/benchmarks-demo-benchmarkRelease.apk
             chmod +x ./candidate/.github/scripts/run_macrobenchmarks.sh
-            ./candidate/.github/scripts/run_macrobenchmarks.sh "./baseline/app/build/outputs/apk/demo/benchmarkRelease/app-demo-benchmarkRelease.apk" "./candidate/app/build/outputs/apk/demo/benchmarkRelease/app-demo-benchmarkRelease.apk" "$OUTPUT_FOLDER"
+            ./candidate/.github/scripts/run_macrobenchmarks.sh "./baseline/app/build/outputs/apk/demo/benchmarkRelease/app-demo-benchmarkRelease.apk" "./candidate/app/build/outputs/apk/demo/benchmarkRelease/app-demo-benchmarkRelease.apk" "./results_${{ matrix.device }}"
 
       - name: Compare macrobenchmark results
         run: |
