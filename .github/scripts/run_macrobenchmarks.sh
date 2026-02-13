@@ -13,6 +13,9 @@ PATH_APK_BASELINE="${1:-}"
 PATH_APK_CANDIDATE="${2:-}"
 OUTPUT_DIR="${3:-./macrobenchmark_results}"
 
+CLASS_STARTUP="com.google.samples.apps.nowinandroid.startup.StartupBenchmark#startupPrecompiledWithBaselineProfile"
+CLASS_SCROLL="com.google.samples.apps.nowinandroid.foryou.ScrollForYouFeedBenchmark#scrollFeedCompilationBaselineProfile"
+
 echo "Debug: Saving results to: ${OUTPUT_DIR}"
 
 TEMP_DIR="$(mktemp -d)"
@@ -33,9 +36,11 @@ install_apk() {
 }
 
 run_benchmark() {
-  echo "Running benchmark..."
+  local class_method="${1}"
+
+  echo "Running benchmark: ${class_method}"
   adb shell am instrument -w \
-    -e class com.google.samples.apps.nowinandroid.foryou.ScrollForYouFeedBenchmark#scrollFeedCompilationBaselineProfile \
+    -e class "${class_method}" \
     -e androidx.benchmark.suppressErrors EMULATOR \
     -e androidx.benchmark.profiling.mode none \
     -e no-isolated-storage true \
@@ -82,29 +87,34 @@ for ((i=1; i<=${NUMBER_OF_RUNS}; i++)); do
   start_time=$(date +%s)
 
   timestamp=$(date +"%Y-%m-%dT%H-%M-%S")
-  output_filename="${BENCHMARK_PKG}_${timestamp}.json"
-  baseline_output_path="${OUTPUT_DIR}/baseline/${output_filename}"
-  candidate_output_path="${OUTPUT_DIR}/candidate/${output_filename}"
-
+  
   echo "=============================="
   echo "Start iteration (${i} / ${NUMBER_OF_RUNS})"
   echo "=============================="
 
-  echo "Starting Baseline Benchmark:"
-  echo "    >> APK file        : ${PATH_APK_BASELINE}"
-  echo "    >> Output file path: ${baseline_output_path}"
-
+  
+  # --- BASELINE ---
   install_apk "${PATH_APK_BASELINE}"
-  run_benchmark
-  write_benchmark_result "${baseline_output_path}"
 
-  echo "Starting Candidate Benchmark:"
-  echo "    >> APK file        : ${PATH_APK_CANDIDATE}"
-  echo "    >> Output file path: ${candidate_output_path}"
+  # run startup baseline
+  run_benchmark "${CLASS_STARTUP}"
+  write_benchmark_result "${OUTPUT_DIR}/baseline/startup_${timestamp}.json"
 
+  # run scroll baseline
+  run_benchmark "${CLASS_SCROLL}"
+  write_benchmark_result "${OUTPUT_DIR}/baseline/scroll_${timestamp}.json"
+
+
+  # --- CANDIDATE ---
   install_apk "${PATH_APK_CANDIDATE}"
-  run_benchmark
-  write_benchmark_result "${candidate_output_path}"
+  
+  # 1. Run Startup
+  run_benchmark "${CLASS_STARTUP}"
+  write_benchmark_result "${OUTPUT_DIR}/candidate/startup_${timestamp}.json"
+
+  # 2. Run Scroll
+  run_benchmark "${CLASS_SCROLL}"
+  write_benchmark_result "${OUTPUT_DIR}/candidate/scroll_${timestamp}.json"
 
   end_time=$(date +%s)
   duration=$((end_time - start_time))

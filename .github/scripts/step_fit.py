@@ -10,8 +10,14 @@ from pathlib import Path
 # # ------------------------------
 
 # ----------- CONFIG -----------
-BENCHMARK_NAME = "scrollFeedCompilationBaselineProfile" 
-METRIC_KEY = "frameDurationCpuMs"
+# (Benchmark Name, Metric Key, label)
+BENCHMARK_CONFIGS = [
+    # 1. Startup Test
+    ("startupPrecompiledWithBaselineProfile", "timeToInitialDisplayMs", "STARTUP"),
+    
+    # 2. Scroll Test
+    ("scrollFeedCompilationBaselineProfile", "frameDurationCpuMs", "SCROLL")
+]
 # ------------------------------
 
 def step_fit(a, b):
@@ -29,32 +35,29 @@ def step_fit(a, b):
 
     return (sum(a) / len(a) - sum(b) / len(b)) / step_error
 
-def extract_median_from_files(paths):
+def extract_median_from_files(paths, bench_name, metric_key):
     medians = []
 
     for path in paths:
         with open(path, "r") as f:
-            data = json.load(f)
+            try:
+                data = json.load(f)
+            except json.JSONDecodeError:
+                print(f"WARN: Could not decode JSON in {path}", file=sys.stderr)
+                continue
 
-        found = False
         for bench in data.get("benchmarks", []):
-            if bench.get("name") == BENCHMARK_NAME:
+            if bench.get("name") == bench_name:
                 metrics = bench.get("metrics", {})
-                if METRIC_KEY in metrics:
-                    medians.append(metrics[METRIC_KEY].get("median"))
-                    found = True
+                if metric_key in metrics:
+                    medians.append(metrics[metric_key].get("median"))
                     break
                 
                 sampled_metrics = bench.get("sampledMetrics", {})
-                if METRIC_KEY in sampled_metrics:
-                    medians.append(sampled_metrics[METRIC_KEY].get("P50"))
-                    found = True
+                if metric_key in sampled_metrics:
+                    medians.append(sampled_metrics[metric_key].get("P50"))
                     break
                     
-
-        if not found:
-            raise ValueError(f"Metric not found in {path}")
-
     return medians
 
 def main():
@@ -88,6 +91,7 @@ def main():
     for i in range(min_len):
         baseline_filename = baseline_files[i].name.upper()
         candidate_filename = candidate_files[i].name.upper()
+        
         if baseline_filename != candidate_filename:
             mismatch_count += 1
             print('* ', end='')
@@ -100,25 +104,35 @@ def main():
         print("WARN: filename mapping mismatch detected. Output prediction may be incorrect")
     print()
 
-    baseline_medians  = extract_median_from_files(baseline_files[:min_len])
-    candidate_medians = extract_median_from_files(candidate_files[:min_len])
-    assert (len(baseline_medians) == len(candidate_medians))
+    for bench_name, metric_key, label in BENCHMARK_CONFIGS:
+        print(f"=== ANALYZING: {label} ===")
+        print(f"Benchmark: {bench_name}")
+        print(f"Metric   : {metric_key}")
 
-    print(f"Benchmark        : {BENCHMARK_NAME}")
-    print(f"Metric           : {METRIC_KEY}")
-    print(f"Baseline medians : {baseline_medians}")
-    print(f"Candidate medians: {candidate_medians}")
-    print("-----------------------------")
-    print("Result: ", end="")
+        baseline_medians = extract_median_from_files(baseline_files, bench_name, metric_key)
+        candidate_medians = extract_median_from_files(candidate_files, bench_name, metric_key)
 
-    result = step_fit(baseline_medians, candidate_medians)
-    if abs(result) <= 25:
-        print("Within noise range", end="")
-    elif result < 0:
-        print("POSSIBLE REGRESSION", end="")
-    else:
-        print("POSSIBLE IMPROVEMENT", end="")
-    print(f" (Step fit: {result:.4})")
+        print(f"Baseline medians : {baseline_medians}")
+        print(f"Candidate medians: {candidate_medians}")
+
+        if not baseline_medians or not candidate_medians:
+            print("WARN: No data found for this benchmark. Skipping calculation.")
+            print("-" * 30)
+            print()
+            continue
+
+        result = step_fit(baseline_medians, candidate_medians)
+        
+        print("Result: ", end="")
+        if abs(result) <= 25:
+            print("Within noise range", end="")
+        elif result < 0:
+            print("POSSIBLE REGRESSION", end="")
+        else:
+            print("POSSIBLE IMPROVEMENT", end="")
+        print(f" (Step fit: {result:.4f})")
+        print("-" * 30)
+        print()
 
 if __name__ == "__main__":
     main()
