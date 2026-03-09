@@ -14,4 +14,4 @@ jobs:
       emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 4096
       disable-animations: true
       gradle-cache-readonly: false
-      instrument-args: "-e class com.google.samples.apps.nowinandroid.startup.StartupBenchmark#startupPrecompiledWithBaselineProfile"
+      instrument-args: "-e class com.google.samples.apps.nowinandroid.foryou.ScrollForYouFeedBenchmark#scrollFeedCompilationBaselineProfile"
