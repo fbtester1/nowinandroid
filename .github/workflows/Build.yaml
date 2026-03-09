@@ -11,11 +11,11 @@ jobs:
       fail-fast: false
       matrix:
         benchmark:
-          - name: startup-baseline
+          - name: startup
             args: "-e class com.google.samples.apps.nowinandroid.startup.StartupBenchmark#startupPrecompiledWithBaselineProfile"
-          - name: scroll-feed-baseline
+          - name: scrollforyou-frametime
             args: "-e class com.google.samples.apps.nowinandroid.foryou.ScrollForYouFeedBenchmark#scrollFeedCompilationBaselineProfile"
-          - name: scroll-feed-memory-max
+          - name: scrollforyou-memory-max
             args: "-e class com.google.samples.apps.nowinandroid.foryou.ScrollForYouFeedBenchmark#scrollFeedCompilationMemoryMaxBaselineProfile"
     name: ${{ matrix.benchmark.name }}
     uses: Frozen-Bytes/actions/.github/workflows/android-macrobenchmark-gradle.yml@main
