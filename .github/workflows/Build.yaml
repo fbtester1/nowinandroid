@@ -5,6 +5,13 @@ on:
 
 jobs:
   benchmark-android:
+    strategy:
+      fail-fast: false
+      matrix:
+        instrument-args:
+          - "-e class com.google.samples.apps.nowinandroid.startup.StartupBenchmark#startupPrecompiledWithBaselineProfile"
+          - "-e class com.google.samples.apps.nowinandroid.foryou.ScrollForYouFeedBenchmark#scrollFeedCompilationBaselineProfile"
+          - "-e class com.google.samples.apps.nowinandroid.foryou.ScrollForYouFeedBenchmark#scrollFeedCompilationMemoryMaxBaselineProfile"
     uses: Frozen-Bytes/actions/.github/workflows/android-macrobenchmark-gradle.yml@main
     with:
       api-level: 31
@@ -14,4 +21,4 @@ jobs:
       emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 4096
       disable-animations: true
       gradle-cache-readonly: false
-      instrument-args: "-e class com.google.samples.apps.nowinandroid.startup.StartupBenchmark#startupPrecompiledWithBaselineProfile"
+      instrument-args: ${{ matrix.instrument-args }}
