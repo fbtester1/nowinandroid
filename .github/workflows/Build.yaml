@@ -2,6 +2,8 @@ name: Benchmark on Emulator
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 4,10,18 * * *"
 
 jobs:
   benchmark-android:
@@ -14,7 +16,7 @@ jobs:
           - "-e class com.google.samples.apps.nowinandroid.foryou.ScrollForYouFeedBenchmark#scrollFeedCompilationMemoryMaxBaselineProfile"
     uses: Frozen-Bytes/actions/.github/workflows/android-macrobenchmark-gradle.yml@main
     with:
-      api-level: 31
+      api-level: 30
       target: google_apis
       arch: x86_64
       force-avd-creation: true
