@@ -28,3 +28,4 @@ jobs:
       disable-animations: true
       gradle-cache-readonly: false
       instrument-args: ${{ matrix.benchmark.args }}
+      artifact-name: "benchmark-${{ matrix.benchmark.name }}"
