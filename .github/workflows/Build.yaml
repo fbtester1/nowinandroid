@@ -29,3 +29,4 @@ jobs:
       gradle-cache-readonly: false
       instrument-args: ${{ matrix.benchmark.args }}
       artifact-name: "benchmark-${{ matrix.benchmark.name }}"
+      runs: 10
