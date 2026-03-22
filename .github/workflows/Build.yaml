@@ -28,4 +28,6 @@ jobs:
       disable-animations: true
       gradle-cache-readonly: false
       instrument-args: ${{ matrix.benchmark.args }}
+      runs: 10
+      benchcomp-args: "--verbose --all-methods --all-measures --aggregate median"
       artifact-name: "benchmark-${{ matrix.benchmark.name }}"
