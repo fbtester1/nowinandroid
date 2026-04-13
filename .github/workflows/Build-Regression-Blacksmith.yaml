@@ -21,7 +21,7 @@ jobs:
             args: "-e class com.google.samples.apps.nowinandroid.foryou.ScrollForYouFeedBenchmark#scrollFeedCompilationMemoryMaxBaselineProfile"
             branch: "bench-scrollforyou-mem-reg"
     name: ${{ matrix.benchmark.name }}
-    uses: fbtester/nowinandroid/.github/workflows/android-macrobenchmark-gradle-blacksmith.yml@main
+    uses: fbtester1/nowinandroid/.github/workflows/android-macrobenchmark-gradle-blacksmith.yml@main
     with:
       api-level: 34
       target: google_apis
