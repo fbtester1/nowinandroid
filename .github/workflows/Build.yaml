@@ -7,11 +7,15 @@ jobs:
   benchmark-android:
     uses: Frozen-Bytes/actions/.github/workflows/android-macrobenchmark-gradle.yml@main
     with:
-      api-level: 31
+      api-level: 34
       target: google_apis
       arch: x86_64
       force-avd-creation: true
-      emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 4096
+      emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 8192 -cores 4
       disable-animations: true
       gradle-cache-readonly: false
-      instrument-args: "-e class com.google.samples.apps.nowinandroid.foryou.ScrollForYouFeedBenchmark#scrollFeedCompilationBaselineProfile"
+      instrument-args: "-e class com.google.samples.apps.nowinandroid.startup.StartupBenchmark#startupPrecompiledWithBaselineProfile"
+      runs: 10
+      args: "--verbose --all-methods --all-measures --aggregate median"
+      artifact-name: "benhcomp-scrollforyou.json"
+      artifact-macrobenchmark-name: "$scrollforyou-raw-macrobenchmark"
