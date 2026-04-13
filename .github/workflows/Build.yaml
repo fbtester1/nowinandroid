@@ -5,7 +5,7 @@ on:
 
 jobs:
   benchmark-android:
-    uses: Frozen-Bytes/actions/.github/workflows/android-macrobenchmark-gradle.yml@main
+    uses: Frozen-Bytes/actions/.github/workflows/android-macrobenchmark-gradle.yml@v3
     with:
       api-level: 34
       target: google_apis
