@@ -2,8 +2,8 @@ name: Benchmark on Emulator
 
 on:
   workflow_dispatch:
-  # schedule:
-    # - cron: "0 2,10,18 * * *"
+  schedule:
+    - cron: "15 * * * *"
 
 jobs:
   benchmark-android:
@@ -29,5 +29,6 @@ jobs:
       gradle-cache-readonly: false
       instrument-args: ${{ matrix.benchmark.args }}
       runs: 5
-      benchcomp-args: "--verbose --all-methods --all-measures --aggregate median"
-      artifact-name: "benchmark-${{ matrix.benchmark.name }}"
+      args: "--verbose --all-methods --all-measures --aggregate trimedian"
+      artifact-name: "benhcomp-${{ matrix.benchmark.name }}.json"
+      artifact-macrobenchmark-name: "${{ matrix.benchmark.name }}-raw-macrobenchmark"
