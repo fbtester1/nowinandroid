@@ -32,7 +32,7 @@ jobs:
       gradle-cache-readonly: false
       candidate-branch: ${{ matrix.benchmark.branch }}
       instrument-args: ${{ matrix.benchmark.args }}
-      runs: 5
-      args: "--verbose --all-methods --all-measures --aggregate trimedian"
+      runs: 10
+      args: "--verbose --all-methods --all-measures --aggregate median"
       artifact-name: "benhcomp-${{ matrix.benchmark.name }}.json"
       artifact-macrobenchmark-name: "${{ matrix.benchmark.name }}-raw-macrobenchmark"
