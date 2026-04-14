@@ -40,7 +40,7 @@ class NiaApplication : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         // Note: Increase Time to Initial Display metric by 100ms
-        Thread.sleep(100)
+        Thread.sleep(200)
 
         super.onCreate()
 
