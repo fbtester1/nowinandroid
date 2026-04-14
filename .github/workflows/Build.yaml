@@ -29,6 +29,6 @@ jobs:
       gradle-cache-readonly: false
       instrument-args: ${{ matrix.benchmark.args }}
       runs: 10
-      args: "--verbose --all-methods --all-measures --aggregate median"
+      args: "--verbose --all-methods --all-measures --aggregate median  --fit 5"
       artifact-name: "benhcomp-${{ matrix.benchmark.name }}.json"
       artifact-macrobenchmark-name: "${{ matrix.benchmark.name }}-raw-macrobenchmark"
