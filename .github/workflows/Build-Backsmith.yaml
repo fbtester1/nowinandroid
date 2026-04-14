@@ -2,8 +2,8 @@ name: Benchmark on Emulator (Blacksmith)
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "15 * * * *"
+  # schedule:
+  #   - cron: "15 * * * *"
 
 jobs:
   benchmark-android:
